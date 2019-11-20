@@ -1,0 +1,201 @@
+import { Game, UnknownCell, OpenCell, CellCoords } from './game';
+import { MinesweeperLayout, Rectangle } from './minesweeperLayout';
+
+export class Renderer {
+    private readonly game: Game;
+    private readonly context: CanvasRenderingContext2D;
+    private layout!: MinesweeperLayout;
+    private mouseDownCell: CellCoords | null = null;
+    private isMouseCaptured: boolean = false;
+
+    constructor(game: Game, minefieldElement: HTMLCanvasElement) {
+        this.game = game;
+        const context = minefieldElement.getContext('2d');
+        if (!context) throw 'Unable to obtain a 2D drawing context.';
+        this.context = context;
+
+        window.addEventListener('resize', () => this.refreshCanvasLayout());
+        this.refreshCanvasLayout();
+
+        minefieldElement.addEventListener('mousedown', ev => this.onMouseDown(ev));
+        minefieldElement.addEventListener('mousemove', ev => this.onMouseMove(ev));
+        minefieldElement.addEventListener('mouseup', ev => this.onMouseUp(ev));
+        minefieldElement.addEventListener('dblclick', ev => this.onDoubleClick(ev));
+        window.addEventListener('contextmenu', ev => ev.preventDefault(), false);
+    }
+
+    private refreshCanvasLayout() {
+        const canvas = this.context.canvas;
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        const devicePixelWidth = canvas.clientWidth * devicePixelRatio;
+        const devicePixelHeight = canvas.clientHeight * devicePixelRatio;
+
+        if (this.layout
+            && this.layout.renderSize.width === devicePixelWidth
+            && this.layout.renderSize.height === devicePixelHeight) {
+
+            return;
+        }
+
+        this.layout = new MinesweeperLayout(devicePixelWidth, devicePixelHeight, this.game.width, this.game.height);
+        canvas.width = devicePixelWidth;
+        canvas.height = devicePixelHeight;
+        this.render();
+    }
+
+    private onMouseDown(ev: MouseEvent) {
+        if (this.game.conclusion) return;
+
+        if (ev.button === 0) {
+            this.isMouseCaptured = true;
+            this.updateMouseDownCell(ev);
+        } else if (ev.button === 2) {
+            const coords = this.getCellByMouseLocation(ev);
+
+            if (coords && this.game.tryToggleMark(coords.x, coords.y))
+                this.render();
+        }
+    }
+
+    private onMouseMove(ev: MouseEvent) {
+        if (this.isMouseCaptured)
+            this.updateMouseDownCell(ev);
+    }
+
+    private onMouseUp(ev: MouseEvent) {
+        if (ev.button === 0) {
+            this.isMouseCaptured = false;
+
+            if (this.mouseDownCell) {
+                this.game.tryOpen(this.mouseDownCell.x, this.mouseDownCell.y);
+                this.mouseDownCell = null;
+                this.render();
+            }
+        }
+    }
+
+    private onDoubleClick(ev: MouseEvent) {
+        if (this.game.conclusion) return;
+
+        if (ev.button === 0) {
+            const coords = this.getCellByMouseLocation(ev);
+
+            if (coords && this.game.openSurroundingIfSatisfied(coords.x, coords.y))
+                this.render();
+        }
+    }
+
+    private updateMouseDownCell(ev: MouseEvent) {
+        const coords = this.getCellByMouseLocation(ev);
+
+        if (!Renderer.areSame(coords, this.mouseDownCell)) {
+            this.mouseDownCell = coords;
+            this.render();
+        }
+    }
+
+    private static areSame(first: CellCoords | null, second: CellCoords | null) {
+        if (!first) return !second;
+        if (!second) return false;
+        return first.x === second.x && first.y === second.y;
+    }
+
+    private getCellByMouseLocation(ev: MouseEvent) {
+        const devicePixelRatio = window.devicePixelRatio || 1;
+
+        return this.layout.getCellCoordinatesByMouseLocation({
+            x: ev.x * devicePixelRatio,
+            y: ev.y * devicePixelRatio
+        });
+    }
+
+    render() {
+        const { renderSize, minefieldBounds, cellSize } = this.layout;
+
+        this.context.clearRect(0, 0, renderSize.width, renderSize.height);
+
+        this.context.fillStyle = '#d0d0d0';
+        this.context.fillRect(minefieldBounds.x, minefieldBounds.y, minefieldBounds.width, minefieldBounds.height);
+
+        this.context.strokeStyle = '#a0a0a0';
+
+        for (let y = 0; y < this.game.height; y++) {
+            const pixelY = this.layout.getCellBorderY(y);
+            this.context.beginPath();
+            this.context.moveTo(minefieldBounds.x, pixelY);
+            this.context.lineTo(minefieldBounds.x + minefieldBounds.width, pixelY);
+            this.context.stroke();
+        }
+
+        for (let x = 0; x < this.game.width; x++) {
+            const pixelX = this.layout.getCellBorderX(x);
+            this.context.beginPath();
+            this.context.moveTo(pixelX, minefieldBounds.y);
+            this.context.lineTo(pixelX, minefieldBounds.y + minefieldBounds.height);
+            this.context.stroke();
+        }
+
+        this.context.font = 'bold ' + (cellSize * 0.5) + 'px Georgia';
+
+        for (let y = 0; y < this.game.height; y++) {
+            for (let x = 0; x < this.game.width; x++) {
+                this.drawCell({ x, y }, this.layout.getCellBounds(x, y), cellSize);
+            }
+        }
+    }
+
+    private drawCell(coords: CellCoords, cellBounds: Rectangle, cellSize: number) {
+        const { x, y } = coords;
+
+        const isMouseDown = this.mouseDownCell && this.mouseDownCell.x === x && this.mouseDownCell.y === y;
+
+        const cell = this.game.getCellAt(x, y);
+
+        if (cell instanceof UnknownCell && (cell.marked || !isMouseDown)) {
+            const borderSize = cellSize * 0.1;
+
+            const right = cellBounds.x + cellBounds.width;
+            const bottom = cellBounds.y + cellBounds.height;
+
+            this.context.beginPath();
+            this.context.moveTo(cellBounds.x, cellBounds.y);
+            this.context.lineTo(cellBounds.x, bottom);
+            this.context.lineTo(cellBounds.x + borderSize, bottom - borderSize);
+            this.context.lineTo(cellBounds.x + borderSize, cellBounds.y + borderSize);
+            this.context.lineTo(right - borderSize, cellBounds.y + borderSize);
+            this.context.lineTo(right, cellBounds.y);
+            this.context.closePath();
+            this.context.fillStyle = '#e8e8e8';
+            this.context.fill();
+
+            this.context.beginPath();
+            this.context.moveTo(right, bottom);
+            this.context.lineTo(right, cellBounds.y);
+            this.context.lineTo(right - borderSize, cellBounds.y + borderSize);
+            this.context.lineTo(right - borderSize, bottom - borderSize);
+            this.context.lineTo(cellBounds.x + borderSize, bottom - borderSize);
+            this.context.lineTo(cellBounds.x, bottom);
+            this.context.closePath();
+            this.context.fillStyle = '#a0a0a0';
+            this.context.fill();
+        }
+
+        const text =
+            cell instanceof UnknownCell ? (cell.marked ? '🚩' : null) :
+            cell instanceof OpenCell ? (cell.mineCount !== 0 ? cell.mineCount.toString() : null) :
+            '💥';
+
+        if (text !== null) {
+            if (cell instanceof OpenCell)
+                this.context.fillStyle = ['blue', 'green', 'red', 'darkblue', 'brown', 'cyan', 'black', 'gray'][cell.mineCount - 1];
+
+            this.drawCenteredText(text, cellBounds);
+        }
+    }
+
+    private drawCenteredText(text: string, bounds: Rectangle) {
+        var metrics = this.context.measureText(text);
+        this.context.textBaseline = 'middle';
+        this.context.fillText(text, bounds.x + (bounds.width - metrics.width) / 2, bounds.y + bounds.height / 2);
+    }
+}
