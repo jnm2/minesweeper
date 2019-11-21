@@ -111,7 +111,7 @@ export class Game {
             const x = Math.floor(Math.random() * this.width);
             const y = Math.floor(Math.random() * this.height);
 
-            if (x === guaranteedCell.x && y === guaranteedCell.y) continue;
+            if (Math.abs(x - guaranteedCell.x) <= 1 && Math.abs(y - guaranteedCell.y) <= 1) continue;
             if (this.mineMap[y][x] === 'bomb') continue;
 
             this.mineMap[y][x] = 'bomb';
