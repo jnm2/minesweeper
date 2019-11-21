@@ -187,7 +187,7 @@ export class Renderer {
 
         if (text !== null) {
             if (cell instanceof OpenCell)
-                this.context.fillStyle = ['blue', 'green', 'red', 'darkblue', 'brown', 'cyan', 'black', 'gray'][cell.mineCount - 1];
+                this.context.fillStyle = ['blue', 'green', '#e00', 'darkblue', 'brown', 'darkcyan', 'black', 'gray'][cell.mineCount - 1];
 
             this.drawCenteredText(text, cellBounds);
         }
