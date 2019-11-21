@@ -104,8 +104,8 @@ export class Renderer {
         const devicePixelRatio = window.devicePixelRatio || 1;
 
         return this.layout.getCellCoordinatesByMouseLocation({
-            x: ev.x * devicePixelRatio,
-            y: ev.y * devicePixelRatio
+            x: ev.offsetX * devicePixelRatio,
+            y: ev.offsetY * devicePixelRatio
         });
     }
 
