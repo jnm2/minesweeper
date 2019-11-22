@@ -13,7 +13,7 @@ export class ExplodedCell { }
 export type CellCoords = { x: number, y: number };
 
 export class Game {
-    private stateMap: (undefined | 'marked' | 'revealed')[][];
+    private readonly stateMap: (undefined | 'marked' | 'revealed')[][];
     private mineMap: ('bomb' | number)[][] | null;
     private remainingToOpen: number;
     private gameConclusion: (null | 'win' | 'loss');
@@ -169,7 +169,7 @@ export class Game {
         }
     }
 
-    private getSurroundingCoordinates(x: number, y: number) {
+    getSurroundingCoordinates(x: number, y: number) {
         const coordinates = new Array<CellCoords>();
 
         if (y > 0)

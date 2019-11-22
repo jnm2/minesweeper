@@ -1,16 +1,19 @@
 import { Game, UnknownCell, OpenCell, CellCoords } from './game';
 import { MinesweeperLayout, Rectangle } from './minesweeperLayout';
+import { Solver } from './solver';
 
 export class Renderer {
     private readonly game: Game;
+    private readonly solver: Solver | null;
     private readonly minefieldContainer: HTMLElement;
     private readonly context: CanvasRenderingContext2D;
     private layout!: MinesweeperLayout;
     private mouseDownCell: CellCoords | null = null;
     private isMouseCaptured = false;
 
-    constructor(game: Game, minefieldContainer: HTMLElement) {
+    constructor(game: Game, minefieldContainer: HTMLElement, shouldAutoSolveUntilIndeterminate = true) {
         this.game = game;
+        this.solver = shouldAutoSolveUntilIndeterminate ? new Solver() : null;
 
         const canvas = document.createElement('canvas');
         canvas.style.touchAction = 'manipulation';
@@ -58,8 +61,12 @@ export class Renderer {
 
         const coords = this.getCellByMouseLocation(ev);
 
-        if (coords && this.game.tryToggleMark(coords.x, coords.y))
+        if (coords && this.game.tryToggleMark(coords.x, coords.y)) {
+            if (this.solver)
+                this.solver.tryProgress(this.game);
+
             this.render();
+        }
     }
 
     private onMouseDown(ev: MouseEvent) {
@@ -87,6 +94,10 @@ export class Renderer {
             if (this.mouseDownCell) {
                 this.game.tryOpen(this.mouseDownCell.x, this.mouseDownCell.y);
                 this.mouseDownCell = null;
+                
+                if (this.solver)
+                    this.solver.tryProgress(this.game);
+
                 this.render();
             }
         }
@@ -99,7 +110,12 @@ export class Renderer {
             const coords = this.getCellByMouseLocation(ev);
 
             if (coords && this.game.openSurroundingIfSatisfied(coords.x, coords.y))
+            {
+                if (this.solver)
+                    this.solver.tryProgress(this.game);
+
                 this.render();
+            }
         }
     }
 
