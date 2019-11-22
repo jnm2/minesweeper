@@ -1,0 +1,64 @@
+html { 
+    height: 100%;
+    font: 11pt 'Segoe UI', Tahoma, sans-serif;
+}
+
+body { 
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    display: table;
+    box-sizing: border-box;
+    padding: 14pt 18pt;
+}
+
+header {
+    display: table-row;
+    height: 1px;
+    white-space: nowrap;
+}
+
+main {
+    display: table-cell;
+    position: relative;
+}
+
+#minefield-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.header-padding {
+    padding: 14pt 18pt;
+}
+
+.header-table {
+    display: table;
+    width: 100%;
+    margin-bottom: 14pt;
+}
+
+.header-table > * {
+    display: table-cell;
+}
+
+h1 {
+    font-size: x-large;
+    font-weight: normal;
+}
+
+.header-link {
+    width: 1px;
+}
+
+.svg-icon {
+    width: 1.3em;
+    height: 1.3em;
+    vertical-align: -25%;
+    margin-right: 0.75ch;
+}
