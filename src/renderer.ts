@@ -3,32 +3,37 @@ import { MinesweeperLayout, Rectangle } from './minesweeperLayout';
 
 export class Renderer {
     private readonly game: Game;
+    private readonly minefieldContainer: HTMLElement;
     private readonly context: CanvasRenderingContext2D;
     private layout!: MinesweeperLayout;
     private mouseDownCell: CellCoords | null = null;
     private isMouseCaptured: boolean = false;
 
-    constructor(game: Game, minefieldElement: HTMLCanvasElement) {
+    constructor(game: Game, minefieldContainer: HTMLElement) {
         this.game = game;
-        const context = minefieldElement.getContext('2d');
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
         if (!context) throw 'Unable to obtain a 2D drawing context.';
         this.context = context;
+
+        this.minefieldContainer = minefieldContainer;
+        minefieldContainer.appendChild(canvas);
 
         window.addEventListener('resize', () => this.refreshCanvasLayout());
         this.refreshCanvasLayout();
 
-        minefieldElement.addEventListener('mousedown', ev => this.onMouseDown(ev));
-        minefieldElement.addEventListener('mousemove', ev => this.onMouseMove(ev));
-        minefieldElement.addEventListener('mouseup', ev => this.onMouseUp(ev));
-        minefieldElement.addEventListener('dblclick', ev => this.onDoubleClick(ev));
+        canvas.addEventListener('mousedown', ev => this.onMouseDown(ev));
+        canvas.addEventListener('mousemove', ev => this.onMouseMove(ev));
+        canvas.addEventListener('mouseup', ev => this.onMouseUp(ev));
+        canvas.addEventListener('dblclick', ev => this.onDoubleClick(ev));
         window.addEventListener('contextmenu', ev => ev.preventDefault(), false);
     }
 
     private refreshCanvasLayout() {
-        const canvas = this.context.canvas;
         const devicePixelRatio = window.devicePixelRatio || 1;
-        const devicePixelWidth = canvas.clientWidth * devicePixelRatio;
-        const devicePixelHeight = canvas.clientHeight * devicePixelRatio;
+        const devicePixelWidth = this.minefieldContainer.clientWidth * devicePixelRatio;
+        const devicePixelHeight = this.minefieldContainer.clientHeight * devicePixelRatio;
 
         if (this.layout
             && this.layout.renderSize.width === devicePixelWidth
@@ -38,6 +43,9 @@ export class Renderer {
         }
 
         this.layout = new MinesweeperLayout(devicePixelWidth, devicePixelHeight, this.game.width, this.game.height);
+        const canvas = this.context.canvas;
+        canvas.style.width = this.minefieldContainer.clientWidth + 'px';
+        canvas.style.height = this.minefieldContainer.clientHeight + 'px';
         canvas.width = devicePixelWidth;
         canvas.height = devicePixelHeight;
         this.render();
