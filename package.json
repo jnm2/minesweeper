@@ -1,5 +1,4 @@
 {
-  "private": true,
   "scripts": {
     "validate": "tsc --noEmit",
     "build": "yarn parcel build src/index.html --public-url .",
