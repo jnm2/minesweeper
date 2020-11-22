@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "validate": "tsc --noEmit && yarn eslint . && yarn html-validate src",
+    "validate": "tsc --noEmit && yarn eslint . && yarn stylelint src/**/*.css && yarn html-validate src",
     "build": "yarn parcel build src/index.html --public-url .",
     "serve": "yarn parcel serve src/index.html"
   },
@@ -10,6 +10,8 @@
     "eslint": "^7.14.0",
     "html-validate": "^4.0.2",
     "parcel": "^2.0.0-beta.1",
+    "stylelint": "^13.8.0",
+    "stylelint-config-standard": "^20.0.0",
     "typescript": "^3.7.2"
   }
 }
