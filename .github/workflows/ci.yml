@@ -1,4 +1,4 @@
-name: Node.js CI
+name: CI
 
 on: [push, pull_request]
 
@@ -8,11 +8,6 @@ jobs:
     steps:
 
     - uses: actions/checkout@v1
-
-    - name: Use Node.js 12
-      uses: actions/setup-node@v1
-      with:
-        node-version: 12.x
 
     - name: Install dependencies
       uses: bahmutov/npm-install@v1
