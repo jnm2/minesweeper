@@ -1,12 +1,12 @@
 {
   "private": true,
   "scripts": {
-    "build": "webpack"
+    "validate": "tsc --noEmit",
+    "build": "yarn parcel build src/index.html --public-url .",
+    "serve": "yarn parcel serve src/index.html"
   },
   "devDependencies": {
-    "ts-loader": "^6.2.1",
-    "typescript": "^3.7.2",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.10"
+    "parcel": "^2.0.0-beta.1",
+    "typescript": "^3.7.2"
   }
 }

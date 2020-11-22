@@ -26,6 +26,9 @@ jobs:
         name: dist
         path: dist
 
+    - name: Validate
+      run: yarn validate
+
     - name: Deploy to GitHub Pages
       if: github.ref == 'refs/heads/master'
       uses: JamesIves/github-pages-deploy-action@releases/v3
