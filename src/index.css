@@ -52,6 +52,11 @@ h1 {
     font-weight: normal;
 }
 
+h1 .attribution {
+    font-size: small;
+    font-style: italic;
+}
+
 .header-link {
     width: 1px;
 }
