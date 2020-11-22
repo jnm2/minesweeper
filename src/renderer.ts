@@ -7,7 +7,7 @@ export class Renderer {
     private readonly context: CanvasRenderingContext2D;
     private layout!: MinesweeperLayout;
     private mouseDownCell: CellCoords | null = null;
-    private isMouseCaptured: boolean = false;
+    private isMouseCaptured = false;
 
     constructor(game: Game, minefieldContainer: HTMLElement) {
         this.game = game;
@@ -38,7 +38,6 @@ export class Renderer {
         if (this.layout
             && this.layout.renderSize.width === devicePixelWidth
             && this.layout.renderSize.height === devicePixelHeight) {
-
             return;
         }
 
@@ -113,11 +112,11 @@ export class Renderer {
 
         return this.layout.getCellCoordinatesByMouseLocation({
             x: ev.offsetX * devicePixelRatio,
-            y: ev.offsetY * devicePixelRatio
+            y: ev.offsetY * devicePixelRatio,
         });
     }
 
-    render() {
+    render(): void {
         const { renderSize, minefieldBounds, cellSize } = this.layout;
 
         this.context.clearRect(0, 0, renderSize.width, renderSize.height);
@@ -188,10 +187,10 @@ export class Renderer {
             this.context.fill();
         }
 
-        const text =
-            cell instanceof UnknownCell ? (cell.marked ? '🚩' : null) :
-            cell instanceof OpenCell ? (cell.mineCount !== 0 ? cell.mineCount.toString() : null) :
-            '💥';
+        const text
+            = cell instanceof UnknownCell ? (cell.marked ? '🚩' : null)
+                : cell instanceof OpenCell ? (cell.mineCount !== 0 ? cell.mineCount.toString() : null)
+                    : '💥';
 
         if (text !== null) {
             if (cell instanceof OpenCell)
@@ -202,7 +201,7 @@ export class Renderer {
     }
 
     private drawCenteredText(text: string, bounds: Rectangle) {
-        var metrics = this.context.measureText(text);
+        const metrics = this.context.measureText(text);
         this.context.textBaseline = 'middle';
         this.context.fillText(text, bounds.x + (bounds.width - metrics.width) / 2, bounds.y + bounds.height / 2);
     }

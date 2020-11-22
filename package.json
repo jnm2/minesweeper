@@ -1,12 +1,17 @@
 {
-  "private": true,
   "scripts": {
-    "build": "webpack"
+    "validate": "tsc --noEmit && yarn eslint . && yarn stylelint src/**/*.css && yarn html-validate src",
+    "build": "yarn parcel build src/index.html --public-url .",
+    "serve": "yarn parcel serve src/index.html"
   },
   "devDependencies": {
-    "ts-loader": "^6.2.1",
-    "typescript": "^3.7.2",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.10"
+    "@typescript-eslint/eslint-plugin": "^4.8.1",
+    "@typescript-eslint/parser": "^4.8.1",
+    "eslint": "^7.14.0",
+    "html-validate": "^4.0.2",
+    "parcel": "^2.0.0-beta.1",
+    "stylelint": "^13.8.0",
+    "stylelint-config-standard": "^20.0.0",
+    "typescript": "^3.7.2"
   }
 }

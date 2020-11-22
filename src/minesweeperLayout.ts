@@ -17,7 +17,7 @@ export class MinesweeperLayout {
         this.cellSize = this.minefieldBounds.width / gameWidth;
     }
 
-    getCellCoordinatesByMouseLocation(mouseLocation: { x: number, y: number }) {
+    getCellCoordinatesByMouseLocation(mouseLocation: { x: number, y: number }): { x: number, y: number } | null {
         const x = Math.floor((mouseLocation.x - this.minefieldBounds.x) / this.cellSize);
         if (x < 0 || x >= this.gameSize.width) return null;
 
@@ -27,15 +27,15 @@ export class MinesweeperLayout {
         return { x, y };
     }
 
-    getCellBorderX(cellX: number) {
+    getCellBorderX(cellX: number): number {
         return Math.floor(this.minefieldBounds.x + this.cellSize * cellX);
     }
 
-    getCellBorderY(cellY: number) {
+    getCellBorderY(cellY: number): number {
         return Math.floor(this.minefieldBounds.y + this.cellSize * cellY);
     }
 
-    getCellBounds(cellX: number, cellY: number) {
+    getCellBounds(cellX: number, cellY: number): { x: number, y: number, width: number, height: number } {
         const x = this.getCellBorderX(cellX);
         const y = this.getCellBorderY(cellY);
 
@@ -43,28 +43,28 @@ export class MinesweeperLayout {
             x,
             y,
             width: this.getCellBorderX(cellX + 1) - x,
-            height: this.getCellBorderY(cellY + 1) - y
+            height: this.getCellBorderY(cellY + 1) - y,
         };
     }
 
     private static fitRectangle(aspect: { width: number, height: number }, outerBounds: Rectangle) {
         if (outerBounds.width * aspect.height < outerBounds.height * aspect.width) {
-            var correctedHeight = outerBounds.width * aspect.height / aspect.width;
+            const correctedHeight = outerBounds.width * aspect.height / aspect.width;
 
             return {
                 x: 0,
                 y: (outerBounds.height - correctedHeight) / 2,
                 width: outerBounds.width,
-                height: correctedHeight
+                height: correctedHeight,
             };
         } else {
-            var correctedWidth = outerBounds.height * aspect.width / aspect.height;
+            const correctedWidth = outerBounds.height * aspect.width / aspect.height;
 
             return {
                 x: (outerBounds.width - correctedWidth) / 2,
                 y: 0,
                 width: correctedWidth,
-                height: outerBounds.height
+                height: outerBounds.height,
             };
         }
     }

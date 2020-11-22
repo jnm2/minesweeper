@@ -1,0 +1,7 @@
+{
+  "extends": ["htmlvalidate:recommended", "html-validate:document"],
+  "rules": {
+    "require-sri": "off",
+    "svg-focusable": "off"
+  }
+}

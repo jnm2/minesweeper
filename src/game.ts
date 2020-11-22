@@ -29,9 +29,9 @@ export class Game {
         this.mineMap = null;
     }
 
-    get conclusion() { return this.gameConclusion; }
+    get conclusion(): null | 'win' | 'loss' { return this.gameConclusion; }
 
-    getCellAt(x: number, y: number) {
+    getCellAt(x: number, y: number): UnknownCell | ExplodedCell | OpenCell {
         const state = this.stateMap[y][x];
 
         if (state !== 'revealed')
@@ -42,7 +42,7 @@ export class Game {
         return contents === 'bomb' ? new ExplodedCell() : new OpenCell(contents);
     }
 
-    tryToggleMark(x: number, y: number) {
+    tryToggleMark(x: number, y: number): boolean {
         const state = this.stateMap[y][x];
         if (state === 'revealed') return false;
 
@@ -50,7 +50,7 @@ export class Game {
         return true;
     }
 
-    tryOpen(x: number, y: number) {
+    tryOpen(x: number, y: number): boolean {
         const state = this.stateMap[y][x];
         if (state === 'revealed' || state === 'marked') return false;
 
@@ -68,13 +68,13 @@ export class Game {
         return true;
     }
 
-    openSurroundingIfSatisfied(x: number, y: number) {
+    openSurroundingIfSatisfied(x: number, y: number): boolean {
         const cell = this.getCellAt(x, y);
 
         if (cell instanceof OpenCell) {
             const surroundingCoords = this.getSurroundingCoordinates(x, y);
 
-            let openable = new Array<CellCoords>();
+            const openable = new Array<CellCoords>();
             let markCount = 0;
 
             for (let i = 0; i < surroundingCoords.length; i++) {
@@ -105,7 +105,7 @@ export class Game {
     private initializeMines(guaranteedCell: CellCoords) {
         this.mineMap = new Array(this.height);
         for (let y = 0; y < this.height; y++)
-            this.mineMap[y] = (new Array(this.width) as any).fill(0);
+            this.mineMap[y] = new Array(this.width).fill(0);
 
         for (let plantedCount = 0; plantedCount < this.mineCount;) {
             const x = Math.floor(Math.random() * this.width);
@@ -149,7 +149,7 @@ export class Game {
 
         let knownGoodCells = [{ x, y }];
 
-        while (true) {
+        for (;;) {
             const cell = knownGoodCells.pop();
             if (!cell) break;
 
@@ -177,8 +177,7 @@ export class Game {
         if (y < this.height - 1)
             coordinates.push({ x, y: y + 1 });
 
-        if (x > 0)
-        {
+        if (x > 0) {
             coordinates.push({ x: x - 1, y });
             if (y > 0)
                 coordinates.push({ x: x - 1, y: y - 1 });

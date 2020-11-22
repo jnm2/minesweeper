@@ -1,4 +1,13 @@
-.vscode/
+/dist/
+.parcel-cache/
 node_modules/
-dist/bundle.js
-dist/bundle.js.map
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
