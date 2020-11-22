@@ -1,13 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es5", 
-    "module": "commonjs",
+    "target": "ES2017",
     "sourceMap": true,
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true, 
-    "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true
   }
 }
