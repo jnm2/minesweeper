@@ -13,6 +13,8 @@ export class Renderer {
         this.game = game;
 
         const canvas = document.createElement('canvas');
+        canvas.style.touchAction = 'manipulation';
+
         const context = canvas.getContext('2d');
         if (!context) throw 'Unable to obtain a 2D drawing context.';
         this.context = context;
