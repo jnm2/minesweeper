@@ -29,7 +29,7 @@ export class Renderer {
         canvas.addEventListener('mousemove', ev => this.onMouseMove(ev));
         canvas.addEventListener('mouseup', ev => this.onMouseUp(ev));
         canvas.addEventListener('dblclick', ev => this.onDoubleClick(ev));
-        window.addEventListener('contextmenu', ev => ev.preventDefault(), false);
+        canvas.addEventListener('contextmenu', ev => this.onContextMenu(ev), false);
     }
 
     private refreshCanvasLayout() {
@@ -52,18 +52,27 @@ export class Renderer {
         this.render();
     }
 
+    private onContextMenu(ev: MouseEvent) {
+        ev.preventDefault();
+        if (this.game.conclusion) return;
+
+        const coords = this.getCellByMouseLocation(ev);
+
+        if (coords && this.game.tryToggleMark(coords.x, coords.y))
+            this.render();
+    }
+
     private onMouseDown(ev: MouseEvent) {
         if (this.game.conclusion) return;
 
         if (ev.button === 0) {
             this.isMouseCaptured = true;
             this.updateMouseDownCell(ev);
-        } else if (ev.button === 2) {
-            const coords = this.getCellByMouseLocation(ev);
-
-            if (coords && this.game.tryToggleMark(coords.x, coords.y))
-                this.render();
         }
+
+        // Right-click is already handled by the contextmenu event which is the only way to get long presses working in
+        // touch interfaces, synced to the haptic feedback. Haven’t found a good way to distinguish right-click from
+        // long press. Waiting until mouseup to mark the cell is at least consistent with how left-click behaves.
     }
 
     private onMouseMove(ev: MouseEvent) {
