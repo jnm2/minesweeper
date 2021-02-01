@@ -47,6 +47,7 @@ export class Game {
         if (state === 'revealed') return false;
 
         this.stateMap[y][x] = state === 'marked' ? undefined : 'marked';
+        this.solve();
         return true;
     }
 
@@ -62,8 +63,10 @@ export class Game {
 
         if (contents === 'bomb')
             this.explode();
-        else
+        else {
             this.openKnownGoodCell(x, y);
+            this.solve();
+        }
 
         return true;
     }
@@ -194,5 +197,80 @@ export class Game {
         }
 
         return coordinates;
+    }
+
+    private solve() {
+        if (!this.mineMap) return;
+
+        while (this.autoFlag() || this.autoOpen());
+    }
+
+    private autoFlag() {
+        let progressed = false;
+
+        if (this.mineMap) {
+            for (let y = 0; y < this.height; y++) {
+                for (let x = 0; x < this.width; x++) {
+                    if (this.stateMap[y][x] === 'revealed') {
+                        const mineCount = this.mineMap[y][x] as number;
+                        const unopenedCells = new Array<CellCoords>();
+
+                        for (const cell of this.getSurroundingCoordinates(x, y)) {
+                            if (this.stateMap[cell.y][cell.x] !== 'revealed') {
+                                unopenedCells.push(cell);
+                                if (unopenedCells.length > mineCount) break;
+                            }
+                        }
+
+                        if (unopenedCells.length === mineCount) {
+                            for (const cell of unopenedCells) {
+                                if (this.stateMap[cell.y][cell.x] !== 'marked') {
+                                    this.stateMap[cell.y][cell.x] = 'marked';
+                                    progressed = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return progressed;
+    }
+
+    private autoOpen() {
+        let progressed = false;
+
+        if (this.mineMap) {
+            for (let y = 0; y < this.height; y++) {
+                for (let x = 0; x < this.width; x++) {
+                    if (this.stateMap[y][x] === 'revealed') {
+                        const mineCount = this.mineMap[y][x] as number;
+                        let markCount = 0;
+                        const unmarkedCells = new Array<CellCoords>();
+
+                        for (const cell of this.getSurroundingCoordinates(x, y)) {
+                            if (this.stateMap[cell.y][cell.x] === 'marked') {
+                                markCount++;
+                                if (markCount > mineCount) break;
+                            } else {
+                                unmarkedCells.push(cell);
+                            }
+                        }
+
+                        if (markCount === mineCount) {
+                            for (const cell of unmarkedCells) {
+                                if (this.stateMap[cell.y][cell.x] !== 'revealed') {
+                                    this.stateMap[cell.y][cell.x] = 'revealed';
+                                    progressed = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return progressed;
     }
 }
