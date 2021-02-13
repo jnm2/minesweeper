@@ -195,4 +195,71 @@ export class Game {
 
         return coordinates;
     }
+
+    estimateProbabilities(simulationCount: number): number[][] | null {
+        if (this.conclusion) return null;
+
+        const mineFrequencies = new Array<number[]>();
+        for (let y = 0; y < this.height; y++)
+            mineFrequencies.push([]);
+
+        // Create a template that each simulation will fill out
+        const simulatedMapTemplate = new Array<(boolean | 'background' | 'foreground')[]>();
+        for (let y = 0; y < this.height; y++)
+            simulatedMapTemplate.push(new Array(this.width));
+
+        let remainingBombs = this.mineCount;
+
+        for (let y = 0; y < this.height; y++)
+            simulatedMapTemplate[y].fill('background');
+
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                const state = this.stateMap[y][x];
+
+                if (state === 'marked') {
+                    simulatedMapTemplate[y][x] = true;
+
+                    remainingBombs--;
+                    if (remainingBombs < 0) return null;
+                } else if (state === 'revealed') {
+                    simulatedMapTemplate[y][x] = false;
+
+                    for (const cell of this.getSurroundingCoordinates(x, y)) {
+                        if (simulatedMapTemplate[cell.y][cell.x] === 'background')
+                            simulatedMapTemplate[cell.y][cell.x] = 'foreground';
+                    }
+                }
+            }
+        }
+
+        const backgroundCells = new Array<CellCoords>();
+        const foregroundCells = new Array<CellCoords>();
+
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                const kind = simulatedMapTemplate[y][x];
+                if (kind === 'background') {
+                    backgroundCells.push({ x, y });
+                } else if (kind === 'foreground') {
+                    foregroundCells.push({ x, y });
+                }
+            }
+        }
+
+        for (let i = 0; i < simulationCount; i++) {
+            // Place bombs randomly in foreground cells in ways that don't clash with exposed numbers until foreground
+            // cells are all satisfied. Somehow do this with no bias.
+
+            // Once foreground cells are satisfied, bombs can only be added to background cells because adding to any
+            // foreground cell will go over the count allowed by exposed numbers. Mark all the background cells the same
+            // probability based on the number of remaining bombs.
+        }
+
+        for (let y = 0; y < this.height; y++)
+            for (let x = 0; x < this.width; x++)
+                mineFrequencies[y][x] /= simulationCount;
+
+        return mineFrequencies;
+    }
 }

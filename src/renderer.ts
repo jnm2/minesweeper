@@ -8,6 +8,7 @@ export class Renderer {
     private layout!: MinesweeperLayout;
     private mouseDownCell: CellCoords | null = null;
     private isMouseCaptured = false;
+    private probabilities: number[][] | null = null;
 
     constructor(game: Game, minefieldContainer: HTMLElement) {
         this.game = game;
@@ -85,7 +86,9 @@ export class Renderer {
             this.isMouseCaptured = false;
 
             if (this.mouseDownCell) {
-                this.game.tryOpen(this.mouseDownCell.x, this.mouseDownCell.y);
+                if (this.game.tryOpen(this.mouseDownCell.x, this.mouseDownCell.y))
+                    this.updateProbabilities();
+
                 this.mouseDownCell = null;
                 this.render();
             }
@@ -98,9 +101,15 @@ export class Renderer {
         if (ev.button === 0) {
             const coords = this.getCellByMouseLocation(ev);
 
-            if (coords && this.game.openSurroundingIfSatisfied(coords.x, coords.y))
+            if (coords && this.game.openSurroundingIfSatisfied(coords.x, coords.y)) {
+                this.updateProbabilities();
                 this.render();
+            }
         }
+    }
+
+    private updateProbabilities() {
+        this.probabilities = this.game.estimateProbabilities(1);
     }
 
     private updateMouseDownCell(ev: MouseEvent) {
