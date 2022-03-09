@@ -17,6 +17,7 @@ export class Game {
     private mineMap: ('bomb' | number)[][] | null;
     private remainingToOpen: number;
     private gameConclusion: (null | 'win' | 'loss');
+    readonly startTime = Date.now();
 
     constructor(readonly width: number, readonly height: number, readonly mineCount: number) {
         this.remainingToOpen = width * height - mineCount;

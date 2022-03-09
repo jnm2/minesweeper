@@ -1,5 +1,6 @@
 import { Game, UnknownCell, OpenCell, CellCoords } from './game';
 import { MinesweeperLayout, Rectangle } from './minesweeperLayout';
+import { Utils } from './utils';
 
 export class Renderer {
     private readonly game: Game;
@@ -87,7 +88,7 @@ export class Renderer {
             if (this.mouseDownCell) {
                 this.game.tryOpen(this.mouseDownCell.x, this.mouseDownCell.y);
                 this.mouseDownCell = null;
-                this.render();
+                this.checkGameStateChange();
             }
         }
     }
@@ -99,8 +100,15 @@ export class Renderer {
             const coords = this.getCellByMouseLocation(ev);
 
             if (coords && this.game.openSurroundingIfSatisfied(coords.x, coords.y))
-                this.render();
+                this.checkGameStateChange();
         }
+    }
+
+    private checkGameStateChange() {
+        this.render();
+
+        if (this.game.conclusion === 'win')
+            alert(`🎉 You won in ${Utils.millisecondsToFriendlyFormat(Date.now() - this.game.startTime)}!`);
     }
 
     private updateMouseDownCell(ev: MouseEvent) {
