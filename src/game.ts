@@ -161,6 +161,15 @@ export class Game {
             this.remainingToOpen--;
             if (this.remainingToOpen === 0) {
                 this.gameConclusion = 'win';
+
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        if (this.mineMap[y][x] === 'bomb') {
+                            this.stateMap[y][x] = 'marked';
+                        }
+                    }
+                }
+
                 break;
             }
 
