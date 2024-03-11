@@ -42,7 +42,6 @@
     "@typescript-eslint/no-extra-semi": "error",
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/no-unused-expressions": "error",
-    "@typescript-eslint/prefer-optional-chain": "error",
     "@typescript-eslint/quotes": ["error", "single"],
     "@typescript-eslint/semi": "error",
     "@typescript-eslint/space-before-function-paren": ["error", { "anonymous": "never", "named": "never", "asyncArrow": "always" }],
