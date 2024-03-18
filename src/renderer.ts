@@ -1,3 +1,4 @@
+import { Heatmap } from './Heatmap';
 import { Game, UnknownCell, OpenCell, CellCoords } from './game';
 import { MinesweeperLayout, Rectangle } from './minesweeperLayout';
 
@@ -8,6 +9,7 @@ export class Renderer {
     private layout!: MinesweeperLayout;
     private mouseDownCell: CellCoords | null = null;
     private isMouseCaptured = false;
+    private heatmap: Heatmap | null = null;
 
     constructor(game: Game, minefieldContainer: HTMLElement) {
         this.game = game;
@@ -58,8 +60,10 @@ export class Renderer {
 
         const coords = this.getCellByMouseLocation(ev);
 
-        if (coords && this.game.tryToggleMark(coords.x, coords.y))
+        if (coords && this.game.tryToggleMark(coords.x, coords.y)) {
+            this.updateHeatmap();
             this.render();
+        }
     }
 
     private onMouseDown(ev: MouseEvent) {
@@ -85,11 +89,46 @@ export class Renderer {
             this.isMouseCaptured = false;
 
             if (this.mouseDownCell) {
-                this.game.tryOpen(this.mouseDownCell.x, this.mouseDownCell.y);
+                if (this.game.tryOpen(this.mouseDownCell.x, this.mouseDownCell.y))
+                    this.updateHeatmap();
                 this.mouseDownCell = null;
                 this.render();
             }
         }
+    }
+
+    private updateHeatmap() {
+        const autoFlag = false;
+        const autoOpen = false;
+        const alwaysShow = true;
+
+        let anyCellOpened;
+        do {
+            anyCellOpened = false;
+
+            this.heatmap = Heatmap.compute(this.game);
+
+            if (autoFlag) {
+                for (const candidate of this.heatmap.candidates) {
+                    if (candidate.bombLikelihood === 1) {
+                        this.game.tryToggleMark(candidate.x, candidate.y);
+                    }
+                }
+            }
+
+            if (autoOpen) {
+                for (const candidate of this.heatmap.candidates) {
+                    if (candidate.bombLikelihood === 0) {
+                        this.game.tryOpen(candidate.x, candidate.y);
+                        anyCellOpened = true;
+                    }
+                }
+            }
+        }
+        while (anyCellOpened);
+
+        if (!alwaysShow && this.heatmap.candidates.some(c => c.bombLikelihood === 0 || c.bombLikelihood === 1))
+            this.heatmap = null;
     }
 
     private onDoubleClick(ev: MouseEvent) {
@@ -98,8 +137,10 @@ export class Renderer {
         if (ev.button === 0) {
             const coords = this.getCellByMouseLocation(ev);
 
-            if (coords && this.game.openSurroundingIfSatisfied(coords.x, coords.y))
+            if (coords && this.game.openSurroundingIfSatisfied(coords.x, coords.y)) {
+                this.updateHeatmap();
                 this.render();
+            }
         }
     }
 
@@ -169,33 +210,41 @@ export class Renderer {
 
         const cell = this.game.getCellAt(x, y);
 
-        if (cell instanceof UnknownCell && (cell.marked || !isMouseDown)) {
-            const borderSize = cellSize * 0.1;
+        if (cell instanceof UnknownCell) {
+            if (cell.marked || !isMouseDown) {
+                const borderSize = cellSize * 0.1;
 
-            const right = cellBounds.x + cellBounds.width;
-            const bottom = cellBounds.y + cellBounds.height;
+                const right = cellBounds.x + cellBounds.width;
+                const bottom = cellBounds.y + cellBounds.height;
 
-            this.context.beginPath();
-            this.context.moveTo(cellBounds.x, cellBounds.y);
-            this.context.lineTo(cellBounds.x, bottom);
-            this.context.lineTo(cellBounds.x + borderSize, bottom - borderSize);
-            this.context.lineTo(cellBounds.x + borderSize, cellBounds.y + borderSize);
-            this.context.lineTo(right - borderSize, cellBounds.y + borderSize);
-            this.context.lineTo(right, cellBounds.y);
-            this.context.closePath();
-            this.context.fillStyle = '#e8e8e8';
-            this.context.fill();
+                this.context.beginPath();
+                this.context.moveTo(cellBounds.x, cellBounds.y);
+                this.context.lineTo(cellBounds.x, bottom);
+                this.context.lineTo(cellBounds.x + borderSize, bottom - borderSize);
+                this.context.lineTo(cellBounds.x + borderSize, cellBounds.y + borderSize);
+                this.context.lineTo(right - borderSize, cellBounds.y + borderSize);
+                this.context.lineTo(right, cellBounds.y);
+                this.context.closePath();
+                this.context.fillStyle = '#e8e8e8';
+                this.context.fill();
 
-            this.context.beginPath();
-            this.context.moveTo(right, bottom);
-            this.context.lineTo(right, cellBounds.y);
-            this.context.lineTo(right - borderSize, cellBounds.y + borderSize);
-            this.context.lineTo(right - borderSize, bottom - borderSize);
-            this.context.lineTo(cellBounds.x + borderSize, bottom - borderSize);
-            this.context.lineTo(cellBounds.x, bottom);
-            this.context.closePath();
-            this.context.fillStyle = '#a0a0a0';
-            this.context.fill();
+                this.context.beginPath();
+                this.context.moveTo(right, bottom);
+                this.context.lineTo(right, cellBounds.y);
+                this.context.lineTo(right - borderSize, cellBounds.y + borderSize);
+                this.context.lineTo(right - borderSize, bottom - borderSize);
+                this.context.lineTo(cellBounds.x + borderSize, bottom - borderSize);
+                this.context.lineTo(cellBounds.x, bottom);
+                this.context.closePath();
+                this.context.fillStyle = '#a0a0a0';
+                this.context.fill();
+            }
+
+            const bombLikelihood = this.heatmap?.getBombLikelihood(x, y);
+            if (bombLikelihood !== undefined && bombLikelihood !== 0 && bombLikelihood !== 1) {
+                this.context.fillStyle = `hsl(${(1 - bombLikelihood) * 120} 100% 50% / 25%)`;
+                this.context.fillRect(cellBounds.x, cellBounds.y, cellBounds.width, cellBounds.height);
+            }
         }
 
         const text
@@ -206,6 +255,8 @@ export class Renderer {
         if (text !== null) {
             if (cell instanceof OpenCell)
                 this.context.fillStyle = ['blue', 'green', '#e00', 'darkblue', 'brown', 'darkcyan', 'black', 'gray'][cell.mineCount - 1];
+            else
+                this.context.fillStyle = 'black';
 
             this.drawCenteredText(text, cellBounds);
         }
