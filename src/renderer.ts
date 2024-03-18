@@ -247,10 +247,10 @@ export class Renderer {
             }
         }
 
-        const text
-            = cell instanceof UnknownCell ? (cell.marked ? '🚩' : null)
-                : cell instanceof OpenCell ? (cell.mineCount !== 0 ? cell.mineCount.toString() : null)
-                    : '💥';
+        const text =
+            cell instanceof UnknownCell ? (cell.marked ? '🚩' : null) :
+            cell instanceof OpenCell ? (cell.mineCount !== 0 ? cell.mineCount.toString() : null) :
+            '💥';
 
         if (text !== null) {
             if (cell instanceof OpenCell)

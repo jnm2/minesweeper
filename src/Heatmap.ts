@@ -1,7 +1,7 @@
-import { CellCoords, ExplodedCell, Game, OpenCell, UnknownCell } from "./game";
+import { CellCoords, ExplodedCell, Game, OpenCell, UnknownCell } from './game';
 
 class Constraint {
-    constructor(        
+    constructor(
         readonly surroundingBombCount: number,
         readonly surroundingCoords: ReadonlyArray<CellCoords>) {
     }
@@ -22,32 +22,6 @@ class Constraint {
 
         return flagCount <= this.surroundingBombCount
             && this.surroundingBombCount <= unopenedCount;
-    }
-}
-
-class MapValidator {
-    constructor(readonly constraints: Constraint[]) {
-    }
-
-    static create(map: Map) {
-        const constraints = new Array<Constraint>();
-
-        for (let y = 0; y < map.cells.length; y++) {
-            for (let x = 0; x < map.cells[y].length; x++) {
-                const cell = map.cells[y][x];
-                if (typeof cell === 'number') {
-                    const surroundingCoords = map.getSurroundingCellCoords(x, y);
-                    if (surroundingCoords.some(c => map.getCellAt(c) === undefined))
-                        constraints.push(new Constraint(cell, surroundingCoords))
-                }
-            }
-        }
-
-        return new MapValidator(constraints);
-    }
-
-    validate(map: Map) {
-        return this.constraints.every(c => c.validate(map));
     }
 }
 
@@ -84,23 +58,34 @@ class Map {
         return [
             { x: x - 1, y: y - 1 },
             { x: x, y: y - 1 },
-            { x: x + 1, y: y - 1 },            
+            { x: x + 1, y: y - 1 },
             { x: x - 1, y: y },
-            { x: x + 1, y: y },            
+            { x: x + 1, y: y },
             { x: x - 1, y: y + 1 },
             { x: x, y: y + 1 },
             { x: x + 1, y: y + 1 },
         ].filter(c => c.x >= 0 && c.y >= 0 && c.y < this.cells.length && c.x < this.cells[c.y].length);
     }
 
-    getMapWith(newValue: 'flag' | 'safe', at: CellCoords) {
+    getValidMapWith(newValue: 'flag' | 'safe', at: CellCoords) {
         const rows = this.cells.slice();
 
         const cells = rows[at.y].slice();
         cells[at.x] = newValue;
         rows[at.y] = cells;
 
-        return new Map(rows);
+        const map = new Map(rows);
+
+        for (const coords of map.getSurroundingCellCoords(at.x, at.y)) {
+            const cell = map.getCellAt(coords);
+            if (typeof cell === 'number') {
+                const constraint = new Constraint(cell, map.getSurroundingCellCoords(coords.x, coords.y));
+                if (!constraint.validate(map))
+                    return null;
+            }
+        }
+
+        return map;
     }
 }
 
@@ -110,20 +95,20 @@ export class Heatmap {
         readonly bombLikelihoodElsewhere?: number) {
     }
 
-    getBombLikelihood(x: number, y: number) {
-        return this.candidates.find(c => c.x === x && c.y === y)?.bombLikelihood 
+    getBombLikelihood(x: number, y: number): number | undefined {
+        return this.candidates.find(c => c.x === x && c.y === y)?.bombLikelihood
             ?? this.bombLikelihoodElsewhere;
     }
 
-    static compute(game: Game) {
+    static compute(game: Game): Heatmap {
         const map = Map.fromGame(game);
-        const validator = MapValidator.create(map);
+        const originalAdjacentUnopened = getAllAdjacentUnopened(map);
 
         const solutions = new Array<Map>();
 
         visit(map);
-        function visit(map: Map) {
-            if (!validator.validate(map)) return;
+        function visit(map: Map | null) {
+            if (map === null) return;
 
             const next = findAdjacentUnopened(map);
             if (next === undefined) {
@@ -131,23 +116,21 @@ export class Heatmap {
                 return;
             }
 
-            visit(map.getMapWith('safe', next));
-            visit(map.getMapWith('flag', next));
+            visit(map.getValidMapWith('safe', next));
+            visit(map.getValidMapWith('flag', next));
         }
 
         function findAdjacentUnopened(map: Map) {
-            for (const constraint of validator.constraints) {
-                for (const surroundingCoord of constraint.surroundingCoords) {
-                    if (map.getCellAt(surroundingCoord) === undefined)
-                        return surroundingCoord;
-                }
+            for (const coord of originalAdjacentUnopened) {
+                if (map.getCellAt(coord) === undefined)
+                    return coord;
             }
         }
 
         if (solutions.length === 0)
             return new Heatmap([]);
 
-        function allAdjacentUnopened(map: Map) {
+        function getAllAdjacentUnopened(map: Map) {
             const coords = new Array<CellCoords>();
 
             for (let y = 0; y < map.cells.length; y++) {
@@ -163,7 +146,7 @@ export class Heatmap {
             return coords;
         }
 
-        return new Heatmap(allAdjacentUnopened(map).map(coords => {
+        return new Heatmap(originalAdjacentUnopened.map(coords => {
             return {
                 ...coords,
                 bombLikelihood: solutions.reduce(
