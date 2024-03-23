@@ -67,6 +67,32 @@ class Map {
         ].filter(c => c.x >= 0 && c.y >= 0 && c.y < this.cells.length && c.x < this.cells[c.y].length);
     }
 
+    getFlagCount() {
+        let count = 0;
+
+        for (let y = 0; y < this.cells.length; y++) {
+            for (let x = 0; x < this.cells[y].length; x++) {
+                if (this.cells[y][x] === 'flag')
+                    count++;
+            }
+        }
+
+        return count;
+    }
+
+    getUnopenedCount() {
+        let count = 0;
+
+        for (let y = 0; y < this.cells.length; y++) {
+            for (let x = 0; x < this.cells[y].length; x++) {
+                if (this.cells[y][x] === undefined)
+                    count++;
+            }
+        }
+
+        return count;
+    }
+
     getValidMapWith(newValue: 'flag' | 'safe', at: CellCoords) {
         const rows = this.cells.slice();
 
@@ -146,13 +172,21 @@ export class Heatmap {
             return coords;
         }
 
-        return new Heatmap(originalAdjacentUnopened.map(coords => {
-            return {
+        const averageFlagCount = solutions.reduce(
+            (prev, solution) => prev + solution.getFlagCount(),
+            0) / solutions.length;
+
+        const averageRemainingMines = game.mineCount - averageFlagCount;
+        const nonadjacentUnopenedCellCount = map.getUnopenedCount() - originalAdjacentUnopened.length;
+        const bombLikelihoodElsewhere = averageRemainingMines / nonadjacentUnopenedCellCount;
+
+        return new Heatmap(
+            originalAdjacentUnopened.map(coords => ({
                 ...coords,
                 bombLikelihood: solutions.reduce(
                     (prev, solution) => prev + (solution.getCellAt(coords) === 'flag' ? 1 : 0),
                     0) / solutions.length,
-            };
-        }));
+            })),
+            bombLikelihoodElsewhere);
     }
 }

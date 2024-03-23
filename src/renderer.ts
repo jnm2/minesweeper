@@ -240,10 +240,13 @@ export class Renderer {
                 this.context.fill();
             }
 
-            const bombLikelihood = this.heatmap?.getBombLikelihood(x, y);
-            if (bombLikelihood !== undefined && bombLikelihood !== 0 && bombLikelihood !== 1) {
-                this.context.fillStyle = `hsl(${(1 - bombLikelihood) * 120} 100% 50% / 25%)`;
-                this.context.fillRect(cellBounds.x, cellBounds.y, cellBounds.width, cellBounds.height);
+            if (!cell.marked) {
+                const drawAtFullCertainty = true;
+                const bombLikelihood = this.heatmap?.getBombLikelihood(x, y);
+                if (bombLikelihood !== undefined && (drawAtFullCertainty || (bombLikelihood !== 0 && bombLikelihood !== 1))) {
+                    this.context.fillStyle = `hsl(${(1 - bombLikelihood) * 120} 100% 50% / 25%)`;
+                    this.context.fillRect(cellBounds.x, cellBounds.y, cellBounds.width, cellBounds.height);
+                }
             }
         }
 
