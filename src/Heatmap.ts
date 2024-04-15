@@ -25,7 +25,7 @@ class Constraint {
     }
 }
 
-class Map {
+export class Map {
     constructor(readonly cells: ReadonlyArray<ReadonlyArray<'flag' | 'safe' | number | undefined>>) {
     }
 
@@ -113,6 +113,29 @@ class Map {
 
         return map;
     }
+
+    validateAll(totalMineCount: number) {
+        let flagCount = 0;
+        let unopenedCount = 0;
+
+        for (let y = 0; y < this.cells.length; y++) {
+            for (let x = 0; x < this.cells[y].length; x++) {
+                const cell = this.cells[y][x];
+                if (typeof cell === 'number') {
+                    const constraint = new Constraint(cell, this.getSurroundingCellCoords(x, y));
+                    if (!constraint.validate(this))
+                        return false;
+                } else if (cell === 'flag') {
+                    flagCount++;
+                    if (flagCount > totalMineCount) return false;
+                } else {
+                    unopenedCount++;
+                }
+            }
+        }
+
+        return unopenedCount + flagCount >= totalMineCount;
+    }
 }
 
 export class Heatmap {
@@ -126,13 +149,14 @@ export class Heatmap {
             ?? this.bombLikelihoodElsewhere;
     }
 
-    static compute(game: Game): Heatmap {
-        const map = Map.fromGame(game);
+    static compute(game: Game | { map: Map, mineCount: number }): Heatmap {
+        const map = game instanceof Game ? Map.fromGame(game) : game.map;
         const originalAdjacentUnopened = getAllAdjacentUnopened(map);
 
         const solutions = new Array<Map>();
 
-        visit(map);
+        if (map.validateAll(game.mineCount))
+            visit(map);
         function visit(map: Map | null) {
             if (map === null) return;
 
