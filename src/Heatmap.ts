@@ -80,7 +80,7 @@ export class Map {
         return count;
     }
 
-    getUnopenedCount() {
+    getUnopenedUnflaggedCount() {
         let count = 0;
 
         for (let y = 0; y < this.cells.length; y++) {
@@ -156,8 +156,9 @@ export class Heatmap {
         const solutions = new Array<Map>();
 
         if (map.validateAll(game.mineCount))
-            visit(map);
-        function visit(map: Map | null) {
+            visit(map, map.getFlagCount(), map.getUnopenedUnflaggedCount());
+
+        function visit(map: Map | null, currentFlagCount: number, currentUnopenedUnflaggedCount: number) {
             if (map === null) return;
 
             const next = findAdjacentUnopened(map);
@@ -166,8 +167,10 @@ export class Heatmap {
                 return;
             }
 
-            visit(map.getValidMapWith('safe', next));
-            visit(map.getValidMapWith('flag', next));
+            if (currentUnopenedUnflaggedCount > game.mineCount - currentFlagCount)
+                visit(map.getValidMapWith('safe', next), currentFlagCount, currentUnopenedUnflaggedCount - 1);
+            if (currentFlagCount < game.mineCount)
+                visit(map.getValidMapWith('flag', next), currentFlagCount + 1, currentUnopenedUnflaggedCount - 1);
         }
 
         function findAdjacentUnopened(map: Map) {
@@ -201,7 +204,7 @@ export class Heatmap {
             0) / solutions.length;
 
         const averageRemainingMines = game.mineCount - averageFlagCount;
-        const nonadjacentUnopenedCellCount = map.getUnopenedCount() - originalAdjacentUnopened.length;
+        const nonadjacentUnopenedCellCount = map.getUnopenedUnflaggedCount() - originalAdjacentUnopened.length;
         const bombLikelihoodElsewhere = averageRemainingMines / nonadjacentUnopenedCellCount;
 
         return new Heatmap(
