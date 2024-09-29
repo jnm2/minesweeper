@@ -1,18 +1,24 @@
 {
   "scripts": {
-    "validate": "tsc --noEmit && yarn eslint . && yarn stylelint src/**/*.css && yarn html-validate src",
     "build": "yarn parcel build src/index.html --public-url .",
-    "serve": "yarn parcel serve src/index.html"
+    "serve": "yarn parcel serve src/index.html",
+    "test": "loadr -- uvu",
+    "validate": "tsc --noEmit && yarn eslint . && yarn stylelint src/**/*.css && yarn html-validate src && yarn test"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^2.8.0",
+    "@types/chai": "^5.0.0",
+    "chai": "^5.1.1",
     "eslint": "^9.11.1",
     "html-validate": "^8.15.0",
+    "loadr": "^0.1.1",
     "parcel": "^2.3.2",
     "stylelint": "^16.2.1",
     "stylelint-config-standard": "^36.0.0",
+    "tsm": "^2.3.0",
     "typescript": "^5.4.2",
-    "typescript-eslint": "^8.7.0"
+    "typescript-eslint": "^8.7.0",
+    "uvu": "^0.5.6"
   },
   "packageManager": "yarn@4.1.1"
 }

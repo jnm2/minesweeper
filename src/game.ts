@@ -50,9 +50,13 @@ export class Game {
         return true;
     }
 
-    tryOpen(x: number, y: number): boolean {
+    canOpen(x: number, y: number): boolean {
         const state = this.stateMap[y][x];
-        if (state === 'revealed' || state === 'marked') return false;
+        return state !== 'revealed' && state !== 'marked';
+    }
+
+    tryOpen(x: number, y: number): boolean {
+        if (!this.canOpen(x, y)) return false;
 
         if (this.mineMap === null)
             this.initializeMines({ x, y });
@@ -126,8 +130,6 @@ export class Game {
 
             plantedCount++;
         }
-
-        console.log(this.mineMap);
     }
 
     private explode() {
