@@ -12,6 +12,9 @@ export class Renderer {
     private heatmap: Heatmap | null = null;
     private drawBestMoves = false;
     private alwaysDrawBestMoves = false;
+    private teachBestMoves = false;
+    private autoFlag = false;
+    private autoOpen = false;
 
     constructor(game: Game, minefieldContainer: HTMLElement) {
         this.game = game;
@@ -93,8 +96,23 @@ export class Renderer {
             this.isMouseCaptured = false;
 
             if (this.mouseDownCell) {
-                if (this.game.tryOpen(this.mouseDownCell.x, this.mouseDownCell.y))
-                    this.afterMove();
+                if (this.game.canOpen(this.mouseDownCell.x, this.mouseDownCell.y)) {
+                    let skipMove = false;
+
+                    if (this.teachBestMoves && !this.drawBestMoves && this.heatmap !== null) {
+                        const loseLikelihood = this.heatmap.getBombLikelihood(this.mouseDownCell.x, this.mouseDownCell.y);
+                        if (loseLikelihood !== undefined && loseLikelihood > this.getBestMoveLoseLikelihood()!) {
+                            this.drawBestMoves = true;
+                            skipMove = true;
+                        }
+                    }
+
+                    if (!skipMove) {
+                        this.game.tryOpen(this.mouseDownCell.x, this.mouseDownCell.y);
+                        this.afterMove();
+                    }
+                }
+
                 this.mouseDownCell = null;
                 this.render();
             }
@@ -112,39 +130,60 @@ export class Renderer {
                 this.drawBestMoves = this.alwaysDrawBestMoves;
                 this.render();
                 break;
+            case 't':
+                this.teachBestMoves = !this.teachBestMoves;
+                break;
+            case 'a':
+                this.autoFlag = !this.autoFlag;
+                this.automate();
+                break;
+            case 'A':
+                this.autoOpen = !this.autoOpen;
+                this.automate();
+                break;
         }
     }
 
     private afterMove() {
         if (!this.alwaysDrawBestMoves) this.drawBestMoves = false;
 
-        const autoFlag = false;
-        const autoOpen = false;
+        this.heatmap = Heatmap.compute(this.game);
+        this.automate();
+    }
 
-        let anyCellOpened;
-        do {
-            anyCellOpened = false;
+    private automate() {
+        if (this.heatmap === null) return;
 
-            this.heatmap = Heatmap.compute(this.game);
+        let needsRender = false;
 
-            if (autoFlag) {
+        while (true) {
+            let anyCellOpened = false;
+
+            if (this.autoFlag) {
                 for (const candidate of this.heatmap.candidates) {
                     if (candidate.bombLikelihood === 1) {
                         this.game.tryToggleMark(candidate.x, candidate.y);
+                        needsRender = true;
                     }
                 }
             }
 
-            if (autoOpen) {
+            if (this.autoOpen) {
                 for (const candidate of this.heatmap.candidates) {
                     if (candidate.bombLikelihood === 0) {
                         this.game.tryOpen(candidate.x, candidate.y);
+                        needsRender = true;
                         anyCellOpened = true;
                     }
                 }
             }
+
+            if (!anyCellOpened) break;
+
+            this.heatmap = Heatmap.compute(this.game);
         }
-        while (anyCellOpened);
+
+        if (needsRender) this.render();
     }
 
     private onDoubleClick(ev: MouseEvent) {
@@ -218,13 +257,11 @@ export class Renderer {
         let drawBestMovesAtLoseLikelihood: number | null = null;
 
         if (this.heatmap !== null) {
-            const fullCertainty = this.heatmap.candidates.some(c => c.bombLikelihood === 0 || c.bombLikelihood === 1);
-            drawHeatmap = alwaysShowHeatmap || !fullCertainty;
+            const bestMoveLoseLikelihood = this.getBestMoveLoseLikelihood()!;
+            drawHeatmap = alwaysShowHeatmap || bestMoveLoseLikelihood > 0;
 
             if (this.drawBestMoves && this.game.conclusion === null) {
-                drawBestMovesAtLoseLikelihood = fullCertainty ? 0 : Math.min(
-                    ...this.heatmap.candidates.map(c => c.bombLikelihood),
-                    ...(this.heatmap.bombLikelihoodElsewhere !== undefined ? [this.heatmap.bombLikelihoodElsewhere] : []));
+                drawBestMovesAtLoseLikelihood = bestMoveLoseLikelihood;
             }
         }
 
@@ -233,6 +270,17 @@ export class Renderer {
                 this.drawCell({ x, y }, this.layout.getCellBounds(x, y), cellSize, drawHeatmap, drawBestMovesAtLoseLikelihood);
             }
         }
+    }
+
+    private getBestMoveLoseLikelihood() {
+        if (this.heatmap === null) return null;
+
+        if (this.heatmap.candidates.some(c => c.bombLikelihood === 0 || c.bombLikelihood === 1))
+            return 0;
+
+        return Math.min(
+            ...this.heatmap.candidates.map(c => c.bombLikelihood),
+            ...(this.heatmap.bombLikelihoodElsewhere !== undefined ? [this.heatmap.bombLikelihoodElsewhere] : []));
     }
 
     private drawCell(coords: CellCoords, cellBounds: Rectangle, cellSize: number, drawHeatmap: boolean, drawBestMovesAtLoseLikelihood: number | null) {
