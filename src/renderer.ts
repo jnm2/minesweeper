@@ -10,6 +10,8 @@ export class Renderer {
     private mouseDownCell: CellCoords | null = null;
     private isMouseCaptured = false;
     private heatmap: Heatmap | null = null;
+    private drawHeatmap = false;
+    private alwaysDrawHeatmap = false;
     private drawBestMoves = false;
     private alwaysDrawBestMoves = false;
     private teachBestMoves = false;
@@ -121,6 +123,15 @@ export class Renderer {
 
     private onKeyPress(ev: KeyboardEvent) {
         switch (ev.key) {
+            case 'h':
+                this.drawHeatmap = !this.drawHeatmap;
+                this.render();
+                break;
+            case 'H':
+                this.alwaysDrawHeatmap = !this.alwaysDrawHeatmap;
+                this.drawHeatmap = this.alwaysDrawHeatmap;
+                this.render();
+                break;
             case 'b':
                 this.drawBestMoves = !this.drawBestMoves;
                 this.render();
@@ -145,6 +156,7 @@ export class Renderer {
     }
 
     private afterMove() {
+        if (!this.alwaysDrawHeatmap) this.drawHeatmap = false;
         if (!this.alwaysDrawBestMoves) this.drawBestMoves = false;
 
         this.heatmap = Heatmap.compute(this.game);
@@ -252,13 +264,10 @@ export class Renderer {
 
         this.context.font = 'bold ' + (cellSize * 0.5) + 'px Georgia';
 
-        const alwaysShowHeatmap = false;
-        let drawHeatmap = false;
         let drawBestMovesAtLoseLikelihood: number | null = null;
 
         if (this.heatmap !== null) {
             const bestMoveLoseLikelihood = this.getBestMoveLoseLikelihood()!;
-            drawHeatmap = alwaysShowHeatmap || bestMoveLoseLikelihood > 0;
 
             if (this.drawBestMoves && this.game.conclusion === null) {
                 drawBestMovesAtLoseLikelihood = bestMoveLoseLikelihood;
@@ -267,7 +276,7 @@ export class Renderer {
 
         for (let y = 0; y < this.game.height; y++) {
             for (let x = 0; x < this.game.width; x++) {
-                this.drawCell({ x, y }, this.layout.getCellBounds(x, y), cellSize, drawHeatmap, drawBestMovesAtLoseLikelihood);
+                this.drawCell({ x, y }, this.layout.getCellBounds(x, y), cellSize, drawBestMovesAtLoseLikelihood);
             }
         }
     }
@@ -283,7 +292,7 @@ export class Renderer {
             ...(this.heatmap.bombLikelihoodElsewhere !== undefined ? [this.heatmap.bombLikelihoodElsewhere] : []));
     }
 
-    private drawCell(coords: CellCoords, cellBounds: Rectangle, cellSize: number, drawHeatmap: boolean, drawBestMovesAtLoseLikelihood: number | null) {
+    private drawCell(coords: CellCoords, cellBounds: Rectangle, cellSize: number, drawBestMovesAtLoseLikelihood: number | null) {
         const { x, y } = coords;
 
         const isMouseDown = this.mouseDownCell && this.mouseDownCell.x === x && this.mouseDownCell.y === y;
@@ -323,7 +332,7 @@ export class Renderer {
             if (!cell.marked) {
                 const bombLikelihood = this.heatmap?.getBombLikelihood(x, y);
 
-                if (drawHeatmap) {
+                if (this.drawHeatmap) {
                     const drawAtFullCertainty = true;
                     if (bombLikelihood !== undefined && (drawAtFullCertainty || (bombLikelihood !== 0 && bombLikelihood !== 1))) {
                         this.context.fillStyle = `hsl(${(1 - bombLikelihood) * 120} 100% 50% / 25%)`;
