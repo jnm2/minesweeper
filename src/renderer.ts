@@ -169,13 +169,14 @@ export class Renderer {
         let needsRender = false;
 
         while (true) {
-            let anyCellOpened = false;
+            let anyChange = false;
 
             if (this.autoFlag) {
                 for (const candidate of this.heatmap.candidates) {
                     if (candidate.bombLikelihood === 1) {
                         this.game.tryToggleMark(candidate.x, candidate.y);
-                        needsRender = true;
+                        // Heatmap still needs to be updated; otherwise, 'best move' will be referring to marking a flag which is already marked.
+                        anyChange = true;
                     }
                 }
             }
@@ -184,14 +185,14 @@ export class Renderer {
                 for (const candidate of this.heatmap.candidates) {
                     if (candidate.bombLikelihood === 0) {
                         this.game.tryOpen(candidate.x, candidate.y);
-                        needsRender = true;
-                        anyCellOpened = true;
+                        anyChange = true;
                     }
                 }
             }
 
-            if (!anyCellOpened) break;
+            if (!anyChange) break;
 
+            needsRender = true;
             this.heatmap = Heatmap.compute(this.game);
         }
 
