@@ -126,8 +126,6 @@ export class Game {
 
             plantedCount++;
         }
-
-        console.log(this.mineMap);
     }
 
     private explode() {
