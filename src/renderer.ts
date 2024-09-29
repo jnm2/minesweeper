@@ -100,7 +100,6 @@ export class Renderer {
     private updateHeatmap() {
         const autoFlag = false;
         const autoOpen = false;
-        const alwaysShow = true;
 
         let anyCellOpened;
         do {
@@ -126,9 +125,6 @@ export class Renderer {
             }
         }
         while (anyCellOpened);
-
-        if (!alwaysShow && this.heatmap.candidates.some(c => c.bombLikelihood === 0 || c.bombLikelihood === 1))
-            this.heatmap = null;
     }
 
     private onDoubleClick(ev: MouseEvent) {
@@ -196,14 +192,18 @@ export class Renderer {
 
         this.context.font = 'bold ' + (cellSize * 0.5) + 'px Georgia';
 
+        const alwaysShowHeatmap = false;
+        const drawHeatmap = this.heatmap !== null && (
+            alwaysShowHeatmap || !this.heatmap.candidates.some(c => c.bombLikelihood === 0 || c.bombLikelihood === 1));
+
         for (let y = 0; y < this.game.height; y++) {
             for (let x = 0; x < this.game.width; x++) {
-                this.drawCell({ x, y }, this.layout.getCellBounds(x, y), cellSize);
+                this.drawCell({ x, y }, this.layout.getCellBounds(x, y), cellSize, drawHeatmap);
             }
         }
     }
 
-    private drawCell(coords: CellCoords, cellBounds: Rectangle, cellSize: number) {
+    private drawCell(coords: CellCoords, cellBounds: Rectangle, cellSize: number, drawHeatmap: boolean) {
         const { x, y } = coords;
 
         const isMouseDown = this.mouseDownCell && this.mouseDownCell.x === x && this.mouseDownCell.y === y;
@@ -240,7 +240,7 @@ export class Renderer {
                 this.context.fill();
             }
 
-            if (!cell.marked) {
+            if (drawHeatmap && !cell.marked) {
                 const drawAtFullCertainty = true;
                 const bombLikelihood = this.heatmap?.getBombLikelihood(x, y);
                 if (bombLikelihood !== undefined && (drawAtFullCertainty || (bombLikelihood !== 0 && bombLikelihood !== 1))) {
