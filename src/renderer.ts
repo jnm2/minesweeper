@@ -10,6 +10,8 @@ export class Renderer {
     private mouseDownCell: CellCoords | null = null;
     private isMouseCaptured = false;
     private heatmap: Heatmap | null = null;
+    private drawBestMoves = false;
+    private alwaysDrawBestMoves = false;
 
     constructor(game: Game, minefieldContainer: HTMLElement) {
         this.game = game;
@@ -32,6 +34,8 @@ export class Renderer {
         canvas.addEventListener('mouseup', ev => this.onMouseUp(ev));
         canvas.addEventListener('dblclick', ev => this.onDoubleClick(ev));
         canvas.addEventListener('contextmenu', ev => this.onContextMenu(ev), false);
+
+        window.addEventListener('keypress', ev => this.onKeyPress(ev));
     }
 
     private refreshCanvasLayout() {
@@ -61,7 +65,7 @@ export class Renderer {
         const coords = this.getCellByMouseLocation(ev);
 
         if (coords && this.game.tryToggleMark(coords.x, coords.y)) {
-            this.updateHeatmap();
+            this.afterMove();
             this.render();
         }
     }
@@ -90,14 +94,30 @@ export class Renderer {
 
             if (this.mouseDownCell) {
                 if (this.game.tryOpen(this.mouseDownCell.x, this.mouseDownCell.y))
-                    this.updateHeatmap();
+                    this.afterMove();
                 this.mouseDownCell = null;
                 this.render();
             }
         }
     }
 
-    private updateHeatmap() {
+    private onKeyPress(ev: KeyboardEvent) {
+        switch (ev.key) {
+            case 'b':
+                this.drawBestMoves = !this.drawBestMoves;
+                this.render();
+                break;
+            case 'B':
+                this.alwaysDrawBestMoves = !this.alwaysDrawBestMoves;
+                this.drawBestMoves = this.alwaysDrawBestMoves;
+                this.render();
+                break;
+        }
+    }
+
+    private afterMove() {
+        if (!this.alwaysDrawBestMoves) this.drawBestMoves = false;
+
         const autoFlag = false;
         const autoOpen = false;
 
@@ -134,7 +154,7 @@ export class Renderer {
             const coords = this.getCellByMouseLocation(ev);
 
             if (coords && this.game.openSurroundingIfSatisfied(coords.x, coords.y)) {
-                this.updateHeatmap();
+                this.afterMove();
                 this.render();
             }
         }
@@ -173,6 +193,7 @@ export class Renderer {
         this.context.fillRect(minefieldBounds.x, minefieldBounds.y, minefieldBounds.width, minefieldBounds.height);
 
         this.context.strokeStyle = '#a0a0a0';
+        this.context.lineWidth = 1;
 
         for (let y = 0; y < this.game.height; y++) {
             const pixelY = this.layout.getCellBorderY(y);
@@ -193,17 +214,28 @@ export class Renderer {
         this.context.font = 'bold ' + (cellSize * 0.5) + 'px Georgia';
 
         const alwaysShowHeatmap = false;
-        const drawHeatmap = this.heatmap !== null && (
-            alwaysShowHeatmap || !this.heatmap.candidates.some(c => c.bombLikelihood === 0 || c.bombLikelihood === 1));
+        let drawHeatmap = false;
+        let drawBestMovesAtLoseLikelihood: number | null = null;
+
+        if (this.heatmap !== null) {
+            const fullCertainty = this.heatmap.candidates.some(c => c.bombLikelihood === 0 || c.bombLikelihood === 1);
+            drawHeatmap = alwaysShowHeatmap || !fullCertainty;
+
+            if (this.drawBestMoves && this.game.conclusion === null) {
+                drawBestMovesAtLoseLikelihood = fullCertainty ? 0 : Math.min(
+                    ...this.heatmap.candidates.map(c => c.bombLikelihood),
+                    ...(this.heatmap.bombLikelihoodElsewhere !== undefined ? [this.heatmap.bombLikelihoodElsewhere] : []));
+            }
+        }
 
         for (let y = 0; y < this.game.height; y++) {
             for (let x = 0; x < this.game.width; x++) {
-                this.drawCell({ x, y }, this.layout.getCellBounds(x, y), cellSize, drawHeatmap);
+                this.drawCell({ x, y }, this.layout.getCellBounds(x, y), cellSize, drawHeatmap, drawBestMovesAtLoseLikelihood);
             }
         }
     }
 
-    private drawCell(coords: CellCoords, cellBounds: Rectangle, cellSize: number, drawHeatmap: boolean) {
+    private drawCell(coords: CellCoords, cellBounds: Rectangle, cellSize: number, drawHeatmap: boolean, drawBestMovesAtLoseLikelihood: number | null) {
         const { x, y } = coords;
 
         const isMouseDown = this.mouseDownCell && this.mouseDownCell.x === x && this.mouseDownCell.y === y;
@@ -240,12 +272,23 @@ export class Renderer {
                 this.context.fill();
             }
 
-            if (drawHeatmap && !cell.marked) {
-                const drawAtFullCertainty = true;
+            if (!cell.marked) {
                 const bombLikelihood = this.heatmap?.getBombLikelihood(x, y);
-                if (bombLikelihood !== undefined && (drawAtFullCertainty || (bombLikelihood !== 0 && bombLikelihood !== 1))) {
-                    this.context.fillStyle = `hsl(${(1 - bombLikelihood) * 120} 100% 50% / 25%)`;
-                    this.context.fillRect(cellBounds.x, cellBounds.y, cellBounds.width, cellBounds.height);
+
+                if (drawHeatmap) {
+                    const drawAtFullCertainty = true;
+                    if (bombLikelihood !== undefined && (drawAtFullCertainty || (bombLikelihood !== 0 && bombLikelihood !== 1))) {
+                        this.context.fillStyle = `hsl(${(1 - bombLikelihood) * 120} 100% 50% / 25%)`;
+                        this.context.fillRect(cellBounds.x, cellBounds.y, cellBounds.width, cellBounds.height);
+                    }
+                }
+
+                if (drawBestMovesAtLoseLikelihood !== null) {
+                    if (bombLikelihood === 1 || bombLikelihood === drawBestMovesAtLoseLikelihood) {
+                        this.context.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+                        this.context.lineWidth = 6;
+                        this.context.strokeRect(cellBounds.x + 2, cellBounds.y + 2, cellBounds.width - 5, cellBounds.height - 5);
+                    }
                 }
             }
         }
