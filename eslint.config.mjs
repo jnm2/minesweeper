@@ -1,0 +1,61 @@
+// @ts-check
+
+import eslint from '@eslint/js';
+import stylistic from '@stylistic/eslint-plugin';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+    {
+        ignores: ['dist/'],
+    },
+    eslint.configs.recommended,
+    ...tseslint.configs.recommended,
+    {
+        extends: [stylistic.configs['recommended-flat']],
+        rules: {
+            '@stylistic/array-bracket-spacing': 'error',
+            '@stylistic/block-spacing': 'error',
+            'camelcase': 'error',
+            'computed-property-spacing': 'error',
+            '@stylistic/dot-location': ['error', 'property'],
+            '@stylistic/eol-last': 'error',
+            'eqeqeq': 'error',
+            '@stylistic/function-call-argument-newline': ['error', 'consistent'],
+            '@stylistic/key-spacing': 'error',
+            '@stylistic/no-multi-spaces': 'error',
+            '@stylistic/no-multiple-empty-lines': 'error',
+            '@stylistic/no-trailing-spaces': 'error',
+            'no-undef': 'off',
+            'no-var': 'error',
+            '@stylistic/no-whitespace-before-property': 'error',
+            '@stylistic/object-curly-spacing': ['error', 'always'],
+            '@stylistic/object-property-newline': ['error', { 'allowAllPropertiesOnSameLine': true }],
+            '@stylistic/operator-linebreak': ['error', 'before', { 'overrides': { '=': 'ignore', '?': 'ignore', ':': 'ignore' } }],
+            '@stylistic/padded-blocks': ['error', 'never'],
+            '@stylistic/semi-spacing': 'error',
+            '@stylistic/space-before-blocks': 'error',
+            '@stylistic/space-in-parens': 'error',
+            '@stylistic/space-unary-ops': ['error', { 'words': true, 'nonwords': false }],
+            '@stylistic/spaced-comment': 'error',
+            '@stylistic/switch-colon-spacing': 'error',
+            'unicode-bom': 'error',
+            '@stylistic/brace-style': ['error', '1tbs', { 'allowSingleLine': true }],
+            '@stylistic/comma-dangle': ['error', 'always-multiline'],
+            '@stylistic/comma-spacing': 'error',
+            '@stylistic/func-call-spacing': 'error',
+            '@stylistic/indent': ['error', 4, { 'SwitchCase': 1, 'flatTernaryExpressions': true }],
+            '@stylistic/keyword-spacing': 'error',
+            '@stylistic/no-extra-semi': 'error',
+            '@typescript-eslint/no-non-null-assertion': 'off',
+            '@typescript-eslint/no-unused-expressions': 'off',
+            '@stylistic/quotes': ['error', 'single'],
+            '@stylistic/semi': ['error', 'always'],
+            '@stylistic/space-before-function-paren': ['error', { 'anonymous': 'never', 'named': 'never', 'asyncArrow': 'always' }],
+            '@stylistic/space-infix-ops': 'error',
+            '@stylistic/type-annotation-spacing': 'error',
+            '@stylistic/quote-props': 'off',
+            '@stylistic/indent-binary-ops': 'off',
+            '@stylistic/multiline-ternary': 'off',
+        },
+    },
+);
