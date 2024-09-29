@@ -264,15 +264,9 @@ export class Renderer {
 
         this.context.font = 'bold ' + (cellSize * 0.5) + 'px Georgia';
 
-        let drawBestMovesAtLoseLikelihood: number | null = null;
-
-        if (this.heatmap !== null) {
-            const bestMoveLoseLikelihood = this.getBestMoveLoseLikelihood()!;
-
-            if (this.drawBestMoves && this.game.conclusion === null) {
-                drawBestMovesAtLoseLikelihood = bestMoveLoseLikelihood;
-            }
-        }
+        const drawBestMovesAtLoseLikelihood = this.drawBestMoves && this.game.conclusion === null
+            ? this.getBestMoveLoseLikelihood()
+            : null;
 
         for (let y = 0; y < this.game.height; y++) {
             for (let x = 0; x < this.game.width; x++) {
